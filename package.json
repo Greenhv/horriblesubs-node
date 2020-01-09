@@ -1,0 +1,32 @@
+{
+  "name": "horriblesubsapi",
+  "version": "0.0.1",
+  "description": "Non official Horriblesubs API wrapper",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/HerbertVidela/HorribleSubsAPI.git"
+  },
+  "keywords": [
+    "horriblesubs",
+    "api",
+    "wrapper",
+    "non-official",
+    "anime",
+    "torrent"
+  ],
+  "author": "HerbertVidela @HerbertVidela",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/HerbertVidela/HorribleSubsAPI/issues"
+  },
+  "homepage": "https://github.com/HerbertVidela/HorribleSubsAPI#readme",
+  "dependencies": {
+    "node-html-parser": "^1.1.17",
+    "request": "^2.88.0",
+    "request-promise-native": "^1.0.8"
+  }
+}
