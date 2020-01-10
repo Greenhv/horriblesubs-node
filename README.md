@@ -1,2 +1,2 @@
-# HorribleSubsAPI
-Non official Horriblesubs API wrapper
+# HorribleSubs Node
+Non official Horriblesubs Node package

@@ -1,7 +1,7 @@
 {
-  "name": "horriblesubsapi",
-  "version": "0.0.1",
-  "description": "Non official Horriblesubs API wrapper",
+  "name": "horriblesubs-node",
+  "version": "0.0.2",
+  "description": "Non official Horriblesubs Node package",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
@@ -21,9 +21,9 @@
   "author": "HerbertVidela @HerbertVidela",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/HerbertVidela/HorribleSubsAPI/issues"
+    "url": "https://github.com/HerbertVidela/horriblesubs-node/issues"
   },
-  "homepage": "https://github.com/HerbertVidela/HorribleSubsAPI#readme",
+  "homepage": "https://github.com/HerbertVidela/horriblesubs-node#readme",
   "dependencies": {
     "node-html-parser": "^1.1.17",
     "request": "^2.88.0",
