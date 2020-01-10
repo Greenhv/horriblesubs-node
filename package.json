@@ -1,6 +1,6 @@
 {
   "name": "horriblesubs-node",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "description": "Non official Horriblesubs Node package",
   "main": "index.js",
   "scripts": {
@@ -25,6 +25,7 @@
   },
   "homepage": "https://github.com/HerbertVidela/horriblesubs-node#readme",
   "dependencies": {
+    "chalk": "^3.0.0",
     "node-html-parser": "^1.1.17",
     "request": "^2.88.0",
     "request-promise-native": "^1.0.8"

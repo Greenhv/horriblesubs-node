@@ -1,10 +1,17 @@
 const request = require('request-promise-native');
 const parse = require('node-html-parser').parse;
+const chalk = require('chalk');
 
+const defaultInterval = 500;
 const BASE_URI = 'https://horriblesubs.info';
 const emptyResponseMsg = 'Nothing was found';
 const getSlug = url => url.match(/\/([^\/]+)\#/)[1];
-const interval = 500;
+const wait = interval =>
+  new Promise(resolve =>
+    setTimeout(() => {
+      resolve();
+    }, interval)
+  );
 
 /**
  * @typedef {Object} Anime
@@ -104,7 +111,7 @@ const parseAnimeInfo = childList => {
  * @return {Promise<Anime[]>} A promise of all found entrys
  *
  */
-const downloadSearchPages = async (searchedAnime, pagesKeys) => {
+const downloadSearchPages = async (searchedAnime, pagesKeys, interval) => {
   const searchURIs = pagesKeys.map(
     page =>
       `${BASE_URI}/api.php?method=search&value=${searchedAnime}${
@@ -112,7 +119,19 @@ const downloadSearchPages = async (searchedAnime, pagesKeys) => {
       }&_=1578432089933`
   );
   const foundEntries = await Promise.all(
-    searchURIs.map(uri => request.get(uri))
+    searchURIs.map(async (uri, index) => {
+      try {
+        await wait(index * interval);
+        const resp = await request.get(uri);
+
+        return resp;
+      } catch (e) {
+        console.log(chalk.red(`❌ Failed to request page ${index}`));
+        console.log(e);
+
+        return emptyResponseMsg;
+      }
+    })
   );
   const allEntries = foundEntries
     .map(entry => {
@@ -150,7 +169,7 @@ const downloadSearchPages = async (searchedAnime, pagesKeys) => {
  * @return {Promise<Episode[]>} A promise of all found episodes
  *
  */
-const downloadEpisodesPages = async (animeID, pagesKeys) => {
+const downloadEpisodesPages = async (animeID, pagesKeys, interval) => {
   const episodesURIs = pagesKeys.map(
     page =>
       `https://horriblesubs.info/api.php?method=getshows&type=show&showid=${animeID}${
@@ -158,7 +177,19 @@ const downloadEpisodesPages = async (animeID, pagesKeys) => {
       }&_=1578621190728`
   );
   const rawEpisodes = await Prommise.all(
-    episodesURIs.map(uri => request.get(uri))
+    episodesURIs.map(async (uri, index) => {
+      try {
+        await wait(index * interval);
+        const resp = await request.get(uri);
+
+        return resp;
+      } catch (e) {
+        console.log(chalk.red(`Failed to request page ${index}`));
+        console.log(e);
+
+        return emptyResponseMsg;
+      }
+    })
   );
   const episodes = rawEpisodes
     .map(rawEpisode => {
@@ -186,16 +217,17 @@ const downloadEpisodesPages = async (animeID, pagesKeys) => {
  * @param {Object} options
  * @param {number} options.page The search results are paginated, with this you can select which page you need, starts at 0
  * @param {boolean} option.combinePages When true it will download and combine the pages starting from 0 to the page value
+ * @param {number} option.interval The time between each request to horrible subs
  * @return {Promise<Anime[]>} A promise of all found episodes
  *
  */
 const searchAnime = (
   searchedAnime,
-  { page = 0, combinePages = false } = {}
+  { page = 0, combinePages = false, interval = defaultInterval } = {}
 ) => {
   const pagesKeys = combinePages ? [...Array(page + 1).keys()] : [page];
 
-  return downloadSearchPages(searchedAnime, pagesKeys);
+  return downloadSearchPages(searchedAnime, pagesKeys, interval);
 };
 
 /*
@@ -223,17 +255,18 @@ const getAnimeID = async animeSlug => {
  * @param {Object} options
  * @param {number} options.page The search results are paginated, with this you can select which page you need, starts at 0
  * @param {boolean} option.combinePages When true it will download and combine the pages starting from 0 to the page value
+ * @param {number} option.interval The time between each request to horrible subs
  * @return {Promise<Episode[]>}
  *
  */
 const getEpisodes = async (
   animeSlug,
-  { page = 0, combinePages = false } = {}
+  { page = 0, combinePages = false, interval = defaultInterval } = {}
 ) => {
   const animeID = await getAnimeID(animeSlug);
   const pagesKeys = combinePages ? [...Array(page + 1).keys()] : [page];
 
-  return downloadEpisodesPages(animeID, pagesKeys);
+  return downloadEpisodesPages(animeID, pagesKeys, interval);
 };
 
 module.exports = {
