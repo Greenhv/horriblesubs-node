@@ -1,6 +1,6 @@
 {
   "name": "horriblesubs-node",
-  "version": "0.0.3",
+  "version": "0.1.0",
   "description": "Non official Horriblesubs Node package",
   "main": "index.js",
   "scripts": {
