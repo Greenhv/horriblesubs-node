@@ -132,7 +132,9 @@ const downloadSearchPages = async (searchedAnime, pagesKeys, interval) => {
         return resp;
       } catch (e) {
         console.log(chalk.red(`❌ Failed to request page ${index}`));
-        console.log(e);
+        if (process.env.HBS_DEBUG) {
+          console.log(e);
+        }
 
         return emptyResponseMsg;
       }
@@ -177,11 +179,11 @@ const downloadSearchPages = async (searchedAnime, pagesKeys, interval) => {
 const downloadEpisodesPages = async (animeID, pagesKeys, interval) => {
   const episodesURIs = pagesKeys.map(
     page =>
-      `https://horriblesubs.info/api.php?method=getshows&type=show&showid=${animeID}${
+      `${BASE_URL}/api.php?method=getshows&type=show&showid=${animeID}${
         page >= 1 ? `&nextid=${page}` : ''
       }&_=1578621190728`
   );
-  const rawEpisodes = await Prommise.all(
+  const rawEpisodes = await Promise.all(
     episodesURIs.map(async (uri, index) => {
       try {
         await wait(index * interval);
@@ -190,7 +192,10 @@ const downloadEpisodesPages = async (animeID, pagesKeys, interval) => {
         return resp;
       } catch (e) {
         console.log(chalk.red(`Failed to request page ${index}`));
-        console.log(e);
+
+        if (process.env.HBS_DEBUG) {
+          console.log(e);
+        }
 
         return emptyResponseMsg;
       }
@@ -201,7 +206,7 @@ const downloadEpisodesPages = async (animeID, pagesKeys, interval) => {
       const isResponseEmpty = emptyResponseMsg === rawEpisode;
 
       if (!isResponseEmpty) {
-        const document = parse(response);
+        const document = parse(rawEpisode);
         const episodes = Array.from(
           document.querySelectorAll('.rls-info-container')
         ).map(ep => parseEpisode(ep.childNodes));
