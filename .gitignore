@@ -106,3 +106,5 @@ dist
 #Universal c-tags
 tags
 
+# Build directory
+lib/

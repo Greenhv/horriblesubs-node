@@ -13,6 +13,7 @@ Some strings needs an specific format to make work correctly some functions, tho
 
 ### searchAnime(searchedAnime: string**, { page, combinePages, interval }) => Anime[]
 * The `searchedAnime` string should be formatted with `+` between each words, like `Sword+art+online`.
+* The elements in the response will be ordered by chapter in descending order.
 * Example. The order of the items are in descending order from most recenlty to oldest.
 ```javascript
   searchedAnime('Sword+art+online', { pages: 2, combinePages: true })
@@ -40,9 +41,10 @@ Some strings needs an specific format to make work correctly some functions, tho
   Result:
   659
 ```
-### getEpisodes(animeSlug: string **, animeID: string | number, { page, combinePages, interval }) => Episode[]
+### getEpisodes({ slug?**: string, id?: string | number }, animeID: string | number, { page, combinePages, interval }) => Episode[]
 * You can send an animeSlug or an animeID, and, if you send an ID then the request to HBS to get it will be skipped, keep that in mind.
 * The animeSlug, as the name suggest, accepts an string formatted with `-` between each words, like `black-clover`.
+* The elements in the response will be ordered by chapter in descending order.
 * Example
 ```javascript
   getEpisode({ slug: 'black-clover' }, { page: 1 })

@@ -1,9 +1,10 @@
-const request = require('request-promise-native');
-const parse = require('node-html-parser').parse;
-const chalk = require('chalk');
-const { downloadSearchPages, downloadEpisodesPages } = require('./utils');
+import { get } from 'request-promise-native';
+import { parse, HTMLElement } from 'node-html-parser';
+import { red } from 'chalk';
+import { downloadSearchPages, downloadEpisodesPages } from './utils';
+import { Show, Options } from './types';
 
-const defaultInterval = parseInt(process.env.HBS_INTERVAL || 500, 10);
+const defaultInterval = parseInt(process.env.HBS_INTERVAL || '500', 10);
 const BASE_URL = process.env.HBS_BASE_URL || 'https://horriblesubs.info';
 
 /*
@@ -16,9 +17,9 @@ const BASE_URL = process.env.HBS_BASE_URL || 'https://horriblesubs.info';
  * @return {Promise<Anime[]>} A promise of all found episodes
  *
  */
-const searchAnime = (
-  searchedAnime,
-  { page = 0, combinePages = false, interval = defaultInterval } = {}
+export const searchAnime = (
+  searchedAnime: string,
+  { page = 0, combinePages = false, interval = defaultInterval }: Options = {}
 ) => {
   if (searchedAnime) {
     const pagesKeys = combinePages ? [...Array(page + 1).keys()] : [page];
@@ -28,7 +29,7 @@ const searchAnime = (
     const message =
       'You need to send and anime title to get the search results';
 
-    console.log(chalk.red(message));
+    console.log(red(message));
     throw Error(message);
   }
 };
@@ -40,23 +41,21 @@ const searchAnime = (
  * @return {Promise<string>} A promise of the anime id
  *
  */
-const getAnimeID = async animeSlug => {
+export const getAnimeID = async (animeSlug: string): Promise<number> => {
   if (animeSlug) {
     try {
-      const htmlPage = await request.get(
-        `${BASE_URL}/${animeSlug.toLowerCase()}`
-      );
-      const document = parse(htmlPage, { script: true });
+      const htmlPage = await get(`${BASE_URL}/${animeSlug.toLowerCase()}`);
+      const document = parse(htmlPage, { script: true }) as HTMLElement;
       const animeID = document
         .querySelector('.entry-content')
         .querySelector('script')
-        .text.match(/[\d]{1,}/g)[0];
+        .text.match(/[\d]{1,}/g);
 
-      return animeID;
+      return animeID ? parseInt(animeID[0], 10) : 0;
     } catch (e) {
       const message = 'Failed to retrieved the anime id';
 
-      console.log(chalk.red(message));
+      console.log(red(message));
 
       if (process.env.HBS_DEBUG) {
         console.log(e);
@@ -67,7 +66,7 @@ const getAnimeID = async animeSlug => {
   } else {
     const message = 'You should send an anime slug to retrieved the anime id';
 
-    console.log(chalk.red(message));
+    console.log(red(message));
     throw Error(message);
   }
 };
@@ -85,28 +84,36 @@ const getAnimeID = async animeSlug => {
  * @return {Promise<Episode[]>}
  *
  */
-const getEpisodes = async (
-  { slug, id },
+export const getEpisodes = async (
+  { slug, id }: { slug?: string; id?: string | number },
   { page = 0, combinePages = false, interval = defaultInterval } = {}
 ) => {
   try {
     if (slug || id) {
-      const animeID = parseInt(id, 10) || (await getAnimeID(slug));
+      const animeID =
+        parseInt(String(id), 10) || (slug ? await getAnimeID(slug) : 0);
       const pagesKeys = combinePages ? [...Array(page + 1).keys()] : [page];
+
+      if (!animeID) {
+        const message = 'An animeID cannot be found';
+
+        console.log(red(message));
+        throw Error(message);
+      }
 
       return downloadEpisodesPages(animeID, pagesKeys, interval);
     } else {
       const message =
         'You should send an anime slug or an anime id to retrieve the episodes';
 
-      console.log(chalk.red(message));
+      console.log(red(message));
       throw Error(message);
     }
   } catch (e) {
     const message = `Failed to retrieved the episodes of ${slug ||
       'no slug'} or ${id || 'no id'}`;
 
-    console.log(chalk.red(message));
+    console.log(red(message));
 
     if (process.env.HBS_DEBUG) {
       console.log(e);
@@ -124,12 +131,14 @@ const getEpisodes = async (
  * @return {Promise<Show[]>}
  *
  * */
-const getShows = async ({ currentSeason = false } = {}) => {
+export const getShows = async ({
+  currentSeason = false
+}: { currentSeason?: boolean } = {}): Promise<Show[]> => {
   try {
-    const rawHtml = await request.get(
+    const rawHtml = await get(
       `https://horriblesubs.info/${currentSeason ? 'current-season' : 'shows'}/`
     );
-    const document = parse(rawHtml);
+    const document = parse(rawHtml) as HTMLElement;
     const rawShows = document.querySelectorAll('.ind-show a');
     const shows = Array.from(rawShows).map(
       ({ attributes: { href, title } }) => ({
@@ -138,24 +147,15 @@ const getShows = async ({ currentSeason = false } = {}) => {
       })
     );
 
-    console.log(shows);
-
     return shows;
   } catch (e) {
     console.log(
-      chalk.red(
-        `Failed to get ${currentSeason ? 'current season' : 'all the'} shows`
-      )
+      red(`Failed to get ${currentSeason ? 'current season' : 'all the'} shows`)
     );
     if (process.env.HBS_DEBUG) {
       console.log(e);
     }
-  }
-};
 
-module.exports = {
-  searchAnime,
-  getAnimeID,
-  getEpisodes,
-  getShows
+    return [];
+  }
 };

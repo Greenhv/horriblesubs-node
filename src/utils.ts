@@ -1,10 +1,15 @@
-const request = require('request-promise-native');
-const parse = require('node-html-parser').parse;
-const chalk = require('chalk');
+import { get } from 'request-promise-native';
+import { parse, HTMLElement, Node } from 'node-html-parser';
+import { red } from 'chalk';
+
 const BASE_URL = process.env.HBS_BASE_URL || 'https://horriblesubs.info';
 const emptyResponseMsg = 'Nothing was found';
-const getSlug = url => url.match(/\/([^\/]+)\#/)[1];
-const wait = interval =>
+const getSlug = (url: string): string => {
+  const matches = url.match(/\/([^\/]+)\#/);
+
+  return matches ? matches[1] : '';
+};
+const wait = (interval: number) =>
   new Promise(resolve =>
     setTimeout(() => {
       resolve();
@@ -40,13 +45,13 @@ const wait = interval =>
 
 /*
  * @function
- * @param {HTMLElement[]} rawResolution List of html objects that contains the resolution and the download links of an episode
+ * @param {Node[]} rawResolution List of html objects that contains the resolution and the download links of an episode
  * @return {Resolution} The resolution and sources found
  *
  */
-const parseResolution = rawResolution => {
+export const parseResolution = (rawResolution: Node[]) => {
   const resolution = rawResolution[0].text.trim().slice(0, -1);
-  const sources = {};
+  const sources: { [key: string]: string } = {};
 
   for (let i = 1; i < rawResolution.length; i++) {
     const rawLink = rawResolution[i];
@@ -54,7 +59,7 @@ const parseResolution = rawResolution => {
     const isHTMLNode = rawNodes.length > 0;
 
     if (isHTMLNode) {
-      const rawTitle = rawNodes[0];
+      const rawTitle = rawNodes[0] as HTMLElement;
       const key = rawTitle.text;
       const link = rawTitle.attributes ? rawTitle.attributes.href : '';
 
@@ -70,11 +75,11 @@ const parseResolution = rawResolution => {
 
 /*
  * @function
- * @param {HTMLElement[]} rawNodes List of html objects that contains the anime and resolutions information
+ * @param {Node[]} rawNodes List of html objects that contains the anime and resolutions information
  * @return {Episode}
  *
  */
-const parseEpisode = rawNodes => {
+export const parseEpisode = (rawNodes: Node[]) => {
   const rawInfo = rawNodes[0];
   const rawLinks = rawNodes[1];
   const { title, releaseDate } = parseAnimeInfo(rawInfo.childNodes);
@@ -90,11 +95,11 @@ const parseEpisode = rawNodes => {
 
 /*
  * @function
- * @param {HTMLElement[]} childList HTML elements with the anime information
+ * @param {Node[]} childList HTML elements with the anime information
  * @return {Anime} The animes parsed into an object
  *
  */
-const parseAnimeInfo = childList => {
+const parseAnimeInfo = (childList: Node[]) => {
   const releaseDate = childList[0].text;
   const title = childList[1].text + childList[2].text;
   const resolutions = childList[3].childNodes
@@ -113,25 +118,30 @@ const parseAnimeInfo = childList => {
  * @function
  * @param {string} searchedAnime The anime searched for
  * @param {number[]} pagesKeys The list of pages to be retrieved
+ * @param {string | number} interval The list of pages to be retrieved
  * @return {Promise<Anime[]>} A promise of all found entrys
  *
  */
-const downloadSearchPages = async (searchedAnime, pagesKeys, interval) => {
+export const downloadSearchPages = async (
+  searchedAnime: string,
+  pagesKeys: number[],
+  interval: string | number
+) => {
   const searchURIs = pagesKeys.map(
     page =>
       `${BASE_URL}/api.php?method=search&value=${searchedAnime}${
         page >= 1 ? `&nextid=${page}` : ''
       }&_=1578432089933`
   );
-  const foundEntries = await Promise.all(
-    searchURIs.map(async (uri, index) => {
+  const foundEntries = (await Promise.all(
+    searchURIs.map(async (uri: string, index: number) => {
       try {
-        await wait(index * interval);
-        const resp = await request.get(uri);
+        await wait(index * parseInt(String(interval), 10));
+        const resp = await get(uri);
 
         return resp;
       } catch (e) {
-        console.log(chalk.red(`❌ Failed to request page ${index}`));
+        console.log(red(`❌ Failed to request page ${index}`));
         if (process.env.HBS_DEBUG) {
           console.log(e);
         }
@@ -139,13 +149,13 @@ const downloadSearchPages = async (searchedAnime, pagesKeys, interval) => {
         return emptyResponseMsg;
       }
     })
-  );
+  )) as string[];
   const allEntries = foundEntries
     .map(entry => {
       const isResponseEmpty = emptyResponseMsg === entry;
 
       if (!isResponseEmpty) {
-        const document = parse(entry);
+        const document = parse(entry) as HTMLElement;
         const rawChapters = document.querySelectorAll('a');
         const pageChapters = Array.from(rawChapters).map(elem => {
           const url = elem.attributes.href;
@@ -171,12 +181,17 @@ const downloadSearchPages = async (searchedAnime, pagesKeys, interval) => {
 /*
  * @async
  * @function
- * @param {string} animeID The anime searached for
+ * @param {number} animeID The anime searached for
  * @param {number[]} pagesKeys The list of pages to be retrieved
+ * @param {string | number} interval The list of pages to be retrieved
  * @return {Promise<Episode[]>} A promise of all found episodes
  *
  */
-const downloadEpisodesPages = async (animeID, pagesKeys, interval) => {
+export const downloadEpisodesPages = async (
+  animeID: number,
+  pagesKeys: number[],
+  interval: string | number
+) => {
   const episodesURIs = pagesKeys.map(
     page =>
       `${BASE_URL}/api.php?method=getshows&type=show&showid=${animeID}${
@@ -184,14 +199,14 @@ const downloadEpisodesPages = async (animeID, pagesKeys, interval) => {
       }&_=1578621190728`
   );
   const rawEpisodes = await Promise.all(
-    episodesURIs.map(async (uri, index) => {
+    episodesURIs.map(async (uri: string, index: number) => {
       try {
-        await wait(index * interval);
-        const resp = await request.get(uri);
+        await wait(index * parseInt(String(interval), 10));
+        const resp = await get(uri);
 
         return resp;
       } catch (e) {
-        console.log(chalk.red(`Failed to request page ${index}`));
+        console.log(red(`Failed to request page ${index}`));
 
         if (process.env.HBS_DEBUG) {
           console.log(e);
@@ -206,7 +221,7 @@ const downloadEpisodesPages = async (animeID, pagesKeys, interval) => {
       const isResponseEmpty = emptyResponseMsg === rawEpisode;
 
       if (!isResponseEmpty) {
-        const document = parse(rawEpisode);
+        const document = parse(rawEpisode) as HTMLElement;
         const episodes = Array.from(
           document.querySelectorAll('.rls-info-container')
         ).map(ep => parseEpisode(ep.childNodes));
@@ -219,11 +234,4 @@ const downloadEpisodesPages = async (animeID, pagesKeys, interval) => {
     .reduce((acc, chapters) => [...acc, ...chapters], []);
 
   return episodes;
-};
-
-module.exports = {
-  parseResolution,
-  parseEpisode,
-  downloadSearchPages,
-  downloadEpisodesPages
 };
