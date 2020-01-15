@@ -3,17 +3,17 @@ export interface Anime {
   episode: number;
   releaseDate: string;
   resolutions: string;
-  url: string;
-  slug: string;
+  url?: string;
+  slug?: string;
 }
 
-export interface Source {
+export interface Sources {
   [key: string]: string;
 }
 
 export interface Resolution {
   resolution: string;
-  sources: Source[];
+  sources: Sources;
 }
 
 export interface Episode {

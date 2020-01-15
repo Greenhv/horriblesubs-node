@@ -2,7 +2,7 @@ import { get } from 'request-promise-native';
 import { parse, HTMLElement } from 'node-html-parser';
 import { red } from 'chalk';
 import { downloadSearchPages, downloadEpisodesPages } from './utils';
-import { Show, Options } from './types';
+import { Show, Options, Episode, Anime } from './types';
 
 const defaultInterval = parseInt(process.env.HBS_INTERVAL || '500', 10);
 const BASE_URL = process.env.HBS_BASE_URL || 'https://horriblesubs.info';
@@ -20,7 +20,7 @@ const BASE_URL = process.env.HBS_BASE_URL || 'https://horriblesubs.info';
 export const searchAnime = (
   searchedAnime: string,
   { page = 0, combinePages = false, interval = defaultInterval }: Options = {}
-) => {
+): Promise<Anime[]> => {
   if (searchedAnime) {
     const pagesKeys = combinePages ? [...Array(page + 1).keys()] : [page];
 
@@ -86,8 +86,8 @@ export const getAnimeID = async (animeSlug: string): Promise<number> => {
  */
 export const getEpisodes = async (
   { slug, id }: { slug?: string; id?: string | number },
-  { page = 0, combinePages = false, interval = defaultInterval } = {}
-) => {
+  { page = 0, combinePages = false, interval = defaultInterval }: Options = {}
+): Promise<Episode[]> => {
   try {
     if (slug || id) {
       const animeID =

@@ -1,6 +1,7 @@
 import { get } from 'request-promise-native';
 import { parse, HTMLElement, Node } from 'node-html-parser';
 import { red } from 'chalk';
+import { Episode, Resolution, Sources, Anime } from './types';
 
 const BASE_URL = process.env.HBS_BASE_URL || 'https://horriblesubs.info';
 const emptyResponseMsg = 'Nothing was found';
@@ -9,7 +10,7 @@ const getSlug = (url: string): string => {
 
   return matches ? matches[1] : '';
 };
-const wait = (interval: number) =>
+const wait = (interval: number): Promise<void> =>
   new Promise(resolve =>
     setTimeout(() => {
       resolve();
@@ -49,9 +50,9 @@ const wait = (interval: number) =>
  * @return {Resolution} The resolution and sources found
  *
  */
-export const parseResolution = (rawResolution: Node[]) => {
+export const parseResolution = (rawResolution: Node[]): Resolution => {
   const resolution = rawResolution[0].text.trim().slice(0, -1);
-  const sources: { [key: string]: string } = {};
+  const sources: Sources = {};
 
   for (let i = 1; i < rawResolution.length; i++) {
     const rawLink = rawResolution[i];
@@ -79,12 +80,11 @@ export const parseResolution = (rawResolution: Node[]) => {
  * @return {Episode}
  *
  */
-export const parseEpisode = (rawNodes: Node[]) => {
+export const parseEpisode = (rawNodes: Node[]): Episode => {
   const rawInfo = rawNodes[0];
   const rawLinks = rawNodes[1];
-  const { title, releaseDate } = parseAnimeInfo(rawInfo.childNodes);
   const episode = {
-    chapter: { title, releaseDate },
+    chapter: { ...parseAnimeInfo(rawInfo.childNodes) },
     resolutions: Array.from(rawLinks.childNodes).map(rawResolution =>
       parseResolution(rawResolution.childNodes)
     )
@@ -99,15 +99,18 @@ export const parseEpisode = (rawNodes: Node[]) => {
  * @return {Anime} The animes parsed into an object
  *
  */
-const parseAnimeInfo = (childList: Node[]) => {
+const parseAnimeInfo = (childList: Node[]): Anime => {
   const releaseDate = childList[0].text;
-  const title = childList[1].text + childList[2].text;
+  const episode = parseInt(childList[2].text.trim(), 10);
+  const title = childList[1].text.trim();
+  const fullTitle = `${title} ${episode}`;
   const resolutions = childList[3].childNodes
     .map(node => node.text)
     .join(' - ');
 
   return {
-    title,
+    title: fullTitle,
+    episode,
     releaseDate,
     resolutions
   };
@@ -126,7 +129,7 @@ export const downloadSearchPages = async (
   searchedAnime: string,
   pagesKeys: number[],
   interval: string | number
-) => {
+): Promise<Anime[]> => {
   const searchURIs = pagesKeys.map(
     page =>
       `${BASE_URL}/api.php?method=search&value=${searchedAnime}${
@@ -191,7 +194,7 @@ export const downloadEpisodesPages = async (
   animeID: number,
   pagesKeys: number[],
   interval: string | number
-) => {
+): Promise<Episode[]> => {
   const episodesURIs = pagesKeys.map(
     page =>
       `${BASE_URL}/api.php?method=getshows&type=show&showid=${animeID}${
