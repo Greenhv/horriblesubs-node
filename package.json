@@ -1,6 +1,6 @@
 {
   "name": "horriblesubs-node",
-  "version": "0.2.0",
+  "version": "0.2.2",
   "description": "Non official Horriblesubs Node package",
   "main": "lib/index.js",
   "types": "lib/index.d.js",
@@ -27,14 +27,14 @@
   },
   "homepage": "https://github.com/HerbertVidela/horriblesubs-node#readme",
   "dependencies": {
-    "@types/node": "^13.1.6",
-    "@types/request-promise-native": "^1.0.17",
-    "chalk": "^3.0.0",
-    "node-html-parser": "^1.1.17",
-    "request": "^2.88.0",
-    "request-promise-native": "^1.0.8"
+    "@types/node": "13.1.6",
+    "@types/request-promise-native": "1.0.17",
+    "chalk": "3.0.0",
+    "node-html-parser": "1.1.17",
+    "request": "2.88.0",
+    "request-promise-native": "1.0.8"
   },
   "devDependencies": {
-    "typescript": "^3.7.4"
+    "typescript": "3.7.4"
   }
 }
